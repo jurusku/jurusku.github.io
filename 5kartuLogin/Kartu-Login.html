@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Kartu Ujian A4 - 33 Kartu Berdempetan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Sembunyikan container cetak di layar biasa */
+        #printContainer {
+            display: none;
+        }
+
+        /* Aturan Cetak Umum */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            #printOutput, main, header, .page-badge {
+                display: none !important;
+            }
+
+            #printContainer {
+                display: block !important;
+            }
+
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .page-sheet {
+                margin: 0 auto;
+                box-sizing: border-box;
+                page-break-after: always;
+                page-break-inside: avoid;
+                border: none !important;
+                background: white !important;
+                box-shadow: none !important;
+            }
+        }
+
+        /* Struktur Halaman Fleksibel dengan Margin Tepi 0.5 cm (5mm) */
+        .page-sheet {
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(3, 66.6mm);
+            grid-template-rows: repeat(11, 26mm);
+            justify-content: center;
+            align-content: center;
+            gap: 0; 
+            padding: 5mm; /* Jarak tepi 0.5 cm di TOP, BOTTOM, LEFT, RIGHT */
+            margin: 0 auto;
+        }
+
+        /* Gaya Tampilan di Browser (Preview Mode) */
+        .page-sheet-preview {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 5mm; /* Jarak tepi 0.5 cm di preview browser */
+            margin: 0 auto 30px auto;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(3, 66.6mm);
+            grid-template-rows: repeat(11, 26mm);
+            justify-content: center;
+            align-content: center;
+            gap: 0;
+            position: relative;
+        }
+
+        /* Desain Kartu Individu */
+        .exam-card {
+            border: 1px solid #1a1a1a;
+            padding: 1.5mm 2.5mm;
+            box-sizing: border-box;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Barcode / QR Code di Samping Kanan Bawah */
+        .card-barcode {
+            position: absolute;
+            bottom: 1.5mm;
+            right: 2mm;
+            width: 12mm;
+            height: 12mm;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-barcode img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Kolom Detail Informasi */
+        .card-info-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-title {
+            font-size: 8.5pt;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 2px solid;
+            padding-bottom: 1px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Baris Data Kartu */
+        .card-row {
+            display: flex;
+            font-size: 8.5pt;
+            line-height: 1.15;
+            margin-bottom: 1px;
+            align-items: center;
+        }
+
+        .card-label {
+            width: 18mm;
+            flex-shrink: 0;
+        }
+
+        .card-colon {
+            width: 2mm;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .card-value {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+
+        /* Penanda Halaman Virtual di Layar */
+        .page-badge {
+            position: absolute;
+            top: -24px;
+            left: 0;
+            background-color: #3b82f6;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 4px 4px 0 0;
+            font-weight: 600;
+        }
+    </style>
+    <!-- Tag Style untuk Menyimpan Layout Cetak Dinamis dengan Margin 5mm -->
+    <style id="dynamic-paper-size">@page { size: 210mm 297mm; margin: 5mm; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navigasi Utama -->
+    <header class="no-print bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-blue-700 p-2 rounded-lg shadow-inner">
+                    <i class="fa-solid fa-address-card text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">KARTU LOGIN JURUSKU</h1>
+                    <p class="text-xs text-blue-200">A4 • 33 Kartu Berdempetan • Margin Aman 0.5cm • Warna Kustom</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="triggerPrint()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-print text-base"></i> CETAK KARTU SEKARANG
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Utama -->
+    <main class="max-w-7xl mx-auto px-4 py-6 no-print">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- PANEL KONTROL & PENGATURAN -->
+            <section class="lg:col-span-4 space-y-6">
+                <!-- Sumber Data -->
+                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
+                    <h2 class="text-md font-bold text-gray-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-database text-blue-600 text-lg"></i> 1. Sumber Data Siswa
+                    </h2>
+                    
+                    <div class="flex border-b border-gray-200 mb-4 text-xs font-semibold">
+                        <button id="btnTabManual" onclick="switchSourceTab('manual')" class="w-1/2 py-2 text-center border-b-2 border-blue-600 text-blue-600 focus:outline-none flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-keyboard"></i> Input Manual
+                        </button>
+                        <button id="btnTabExcel" onclick="switchSourceTab('excel')" class="w-1/2 py-2 text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-file-excel"></i> Unggah Excel
+                        </button>
+                    </div>
+
+                    <div id="panelTabManual" class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-bold text-gray-700">Tempel Data Siswa:</label>
+                            <button onclick="insertSampleManualText()" class="text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-magic-wand-sparkles"></i> Gunakan Contoh
+                            </button>
+                        </div>
+                        <textarea id="manualDataInput" rows="7" 
+                            class="w-full text-xs font-mono p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+                            placeholder="Format: Nama | Kelas | Username | Password"></textarea>
+                        
+                        <button onclick="processManualInput()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-xs transition duration-150 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrows-rotate"></i> Terapkan & Generate Kartu
+                        </button>
+                    </div>
+
+                    <div id="panelTabExcel" class="space-y-3 hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700">Impor via Excel:</span>
+                            <button onclick="downloadSampleExcel()" class="text-[10px] text-emerald-600 hover:text-emerald-800 underline font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-download"></i> Unduh Template
+                            </button>
+                        </div>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition cursor-pointer relative" id="dropzone">
+                            <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleExcelUpload(event)">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 mb-2"></i>
+                            <p class="text-xs font-semibold text-gray-700">Pilih atau Seret File Excel</p>
+                        </div>
+                        <span class="text-[11px] text-gray-500" id="fileStatus">Belum ada file diunggah</span>
+                    </div>
+                </div>
+
+                <!-- Pemetaan Kolom Excel -->
+                <div id="mappingSection" class="bg-white rounded-xl shadow-md p-5 border border-gray-100 hidden">
+                    <h2 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-spin text-orange-500"></i> Hubungkan Kolom Excel
+                    </h2>
+                    <div class="space-y-3">
+                        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Nama Siswa:</label><select id="mapNama" class="w-full text-xs border rounded p-1.5 bg-gray-50" onchange="applyMapping()"></select></div>
+                        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Kelas:</label><select id="mapKelas" class="w-full text-xs border rounded p-1.5 bg-gray-50" onchange="applyMapping()"></select></div>
+                        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Username:</label><select id="mapUsername" class="w-full text-xs border rounded p-1.5 bg-gray-50" onchange="applyMapping()"></select></div>
+                        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Password:</label><select id="mapPassword" class="w-full text-xs border rounded p-1.5 bg-gray-50" onchange="applyMapping()"></select></div>
+                    </div>
+                </div>
+
+                <!-- Kustomisasi -->
+                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100 space-y-4">
+                    <h2 class="text-md font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-blue-500"></i> 2. Desain & Kustomisasi
+                    </h2>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Pilih Warna Tulisan:</label>
+                        <div class="flex gap-2">
+                            <select id="themeColorSelect" onchange="handleColorSelectChange(this.value)" class="flex-grow text-xs border rounded p-2 bg-white font-semibold text-gray-700">
+                                <option value="#000000" selected>Hitam Default (#000000)</option>
+                                <option value="#dc2626">Merah (#dc2626)</option>
+                                <option value="#2563eb">Biru (#2563eb)</option>
+                                <option value="#16a34a">Hijau (#16a34a)</option>
+                                <option value="custom">Warna Kustom...</option>
+                            </select>
+                            <!-- Input Color Picker Kustom yang Tersembunyi -->
+                            <input type="color" id="customColorPicker" value="#3b82f6" oninput="handleCustomColorInput(this.value)" class="w-10 h-8 border rounded cursor-pointer p-0 hidden bg-transparent">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Judul / Kop Kartu:</label>
+                        <input type="text" id="headerText" value="KARTU LOGIN JURUSKU" oninput="updateHeader()" class="w-full text-xs border rounded p-2">
+                    </div>
+                    <div class="pt-2 border-t border-gray-100 space-y-3">
+                        <div>
+                            <div class="flex justify-between text-[10px] font-medium text-gray-500"><span>Ukuran Teks Dasar</span><span id="valFontSize">8.5pt</span></div>
+                            <input type="range" id="inputFontSize" min="7.5" max="11" step="0.5" value="8.5" oninput="adjustFontSize(this.value)" class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistik -->
+                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-lg p-3 text-center"><span class="block text-2xl font-black text-blue-700" id="totalSiswa">0</span><span class="text-[10px] text-gray-600 font-medium">Total Siswa</span></div>
+                        <div class="bg-indigo-50 rounded-lg p-3 text-center"><span class="block text-2xl font-black text-indigo-700" id="totalHalaman">0</span><span class="text-[10px] text-gray-600 font-medium">Lembar A4</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PREVIEW AREA -->
+            <section class="lg:col-span-8">
+                <div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Pratinjau Lembar Cetak (A4)</h2>
+                        <p class="text-xs text-gray-500">Tampilan dengan margin aman 0.5 cm di sekeliling kertas.</p>
+                    </div>
+                    <button onclick="toggleGridLine()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-1.5 px-3 rounded border transition">Sembunyikan Grid Kosong</button>
+                </div>
+
+                <div class="overflow-x-auto p-4 bg-gray-200 rounded-xl border border-gray-300 shadow-inner flex flex-col items-center">
+                    <div id="emptyState" class="py-20 text-center max-w-sm">
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">Belum Ada Data Kartu</h3>
+                        <button onclick="insertSampleManualText(); processManualInput();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded-lg mt-2">Gunakan Contoh Data</button>
+                    </div>
+                    <div id="printOutput" class="w-full flex flex-col items-center"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- CONTAINER CETAK -->
+    <div id="printContainer"></div>
+
+    <script>
+        let studentData = [];
+        let mapping = { nama: 'Nama', kelas: 'Kelas', username: 'Username', password: 'Password' };
+        let isGridLineVisible = true;
+        let activeColor = '#000000';
+
+        window.onload = function() {
+            insertSampleManualText();
+            processManualInput();
+        };
+
+        function switchSourceTab(tab) {
+            const btnManual = document.getElementById('btnTabManual');
+            const btnExcel = document.getElementById('btnTabExcel');
+            const panelManual = document.getElementById('panelTabManual');
+            const panelExcel = document.getElementById('panelTabExcel');
+            if (tab === 'manual') {
+                panelManual.classList.remove('hidden'); panelExcel.classList.add('hidden');
+            } else {
+                panelManual.classList.add('hidden'); panelExcel.classList.remove('hidden');
+            }
+        }
+
+        function insertSampleManualText() {
+            document.getElementById('manualDataInput').value = 
+`NURUL SITI KHOTIMAH | XII RPL 1 | 0084561021 | RPL_8382
+DWI ARYA SAPUTRA | XII TKJ 2 | 0082739183 | TKJ_0312
+ANANDA PUTRI AYU | XII MM 1 | 0072938122 | MM_9122
+RAFFI AHMAD FAUZI | XII RPL 1 | 0081293822 | RPL_9921`;
+        }
+
+        function processManualInput() {
+            const rawText = document.getElementById('manualDataInput').value.trim();
+            if (!rawText) return;
+            const lines = rawText.split('\n');
+            studentData = lines.map(line => {
+                const parts = line.split('|');
+                return {
+                    'Nama': (parts[0] || '').trim().toUpperCase(),
+                    'Kelas': (parts[1] || '').trim().toUpperCase(),
+                    'Username': (parts[2] || '').trim(),
+                    'Password': (parts[3] || '').trim()
+                };
+            });
+            renderCards();
+        }
+
+        // Logic penanganan perubahan warna dropdown & input kustom
+        function handleColorSelectChange(val) {
+            const picker = document.getElementById('customColorPicker');
+            if (val === 'custom') {
+                picker.classList.remove('hidden');
+                activeColor = picker.value;
+            } else {
+                picker.classList.add('hidden');
+                activeColor = val;
+            }
+            renderCards();
+        }
+
+        function handleCustomColorInput(val) {
+            activeColor = val;
+            renderCards();
+        }
+
+        function adjustFontSize(size) { document.getElementById('valFontSize').innerText = size + 'pt'; renderCards(); }
+        function toggleGridLine() { isGridLineVisible = !isGridLineVisible; renderCards(); }
+        function triggerPrint() { window.print(); }
+        function updateHeader() { renderCards(); }
+
+        function renderCards() {
+            const printOutput = document.getElementById('printOutput');
+            const printContainer = document.getElementById('printContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            printOutput.innerHTML = ''; printContainer.innerHTML = '';
+            if (studentData.length === 0) { emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+
+            const cardsPerPage = 33;
+            const totalPages = Math.ceil(studentData.length / cardsPerPage);
+            document.getElementById('totalSiswa').innerText = studentData.length;
+            document.getElementById('totalHalaman').innerText = totalPages;
+
+            const headerTextValue = document.getElementById('headerText').value.toUpperCase();
+            const baseFontSize = parseFloat(document.getElementById('inputFontSize').value);
+            
+            // Konversi hex color tanpa '#' untuk request API Barcode/QR Code
+            const cleanHexColor = activeColor.replace('#', '');
+
+            for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+                const pageDiv = document.createElement('div'); pageDiv.className = 'page-sheet-preview';
+                const printPageDiv = document.createElement('div'); printPageDiv.className = 'page-sheet';
+
+                for (let cardIdx = 0; cardIdx < cardsPerPage; cardIdx++) {
+                    const studentIdx = (pageIdx * cardsPerPage) + cardIdx;
+                    if (studentIdx < studentData.length) {
+                        const item = studentData[studentIdx];
+                        
+                        // Menambahkan padding-right 13mm khusus baris Username & Password agar teks panjang tidak menabrak Barcode/QR Code
+                        const cardHTML = `
+                            <div class="exam-card" style="border-color: ${activeColor}; color: ${activeColor};">
+                                <div class="card-info-area">
+                                    <div class="card-title" style="font-size: ${baseFontSize + 1}pt; border-color: ${activeColor};">${headerTextValue}</div>
+                                    <div class="card-row" style="font-size: ${baseFontSize}pt;">
+                                        <div class="card-label" style="font-weight: 400;">NAMA</div>
+                                        <div class="card-colon" style="font-weight: 400;">:</div>
+                                        <div class="card-value" style="font-weight: 400;" title="${item.Nama}">${item.Nama}</div>
+                                    </div>
+                                    <div class="card-row" style="font-size: ${baseFontSize}pt;">
+                                        <div class="card-label" style="font-weight: 400;">KELAS</div>
+                                        <div class="card-colon" style="font-weight: 400;">:</div>
+                                        <div class="card-value" style="font-weight: 400;">${item.Kelas}</div>
+                                    </div>
+                                    <div class="card-row" style="font-size: ${baseFontSize}pt; margin-top: 2px; padding-right: 13mm;">
+                                        <div class="card-label" style="font-weight: 800;">USERNAME</div>
+                                        <div class="card-colon" style="font-weight: 800;">:</div>
+                                        <div class="card-value font-mono font-black" style="font-weight: 800; font-size: ${baseFontSize + 1.5}pt;">${item.Username}</div>
+                                    </div>
+                                    <div class="card-row" style="font-size: ${baseFontSize}pt; padding-right: 13mm;">
+                                        <div class="card-label" style="font-weight: 800;">PASSWORD</div>
+                                        <div class="card-colon" style="font-weight: 800;">:</div>
+                                        <div class="card-value font-mono font-black" style="font-weight: 800; font-size: ${baseFontSize + 1.5}pt;">${item.Password}</div>
+                                    </div>
+                                </div>
+                                <div class="card-barcode">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://jurusku.github.io/&color=${cleanHexColor}" alt="Barcode Link">
+                                </div>
+                            </div>
+                        `;
+                        pageDiv.insertAdjacentHTML('beforeend', cardHTML);
+                        printPageDiv.insertAdjacentHTML('beforeend', cardHTML);
+                    } else {
+                        const emptyCardHTML = `<div class="exam-card" style="border-color: ${activeColor}; border-style: ${isGridLineVisible ? 'dashed' : 'none'}; opacity: 0.2;"></div>`;
+                        pageDiv.insertAdjacentHTML('beforeend', emptyCardHTML);
+                        printPageDiv.insertAdjacentHTML('beforeend', emptyCardHTML);
+                    }
+                }
+                printOutput.appendChild(pageDiv);
+                printContainer.appendChild(printPageDiv);
+            }
+        }
+    </script>
+</body>
+</html>
