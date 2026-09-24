@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - E-Asesmen</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            /* Background Light iOS Gradient */
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 50%, #e0e7ff 100%);
+            background-attachment: fixed;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Poppins', sans-serif;
+            padding: 20px 20px 140px 20px; /* Space bawah ekstra agar tidak tertutup sticky bar */
+            color: #1e293b;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        h1 {
+            color: #0f172a;
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.5px;
+        }
+
+        /* Container Login Terpusat */
+        .login-box {
+            max-width: 420px;
+            margin: 60px auto;
+            text-align: center;
+            padding: 30px 25px;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(31, 38, 135, 0.08);
+        }
+
+        /* Full Width Container untuk Panel Admin */
+        #admin-section {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            color: #0f172a;
+            outline: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        input[type="password"]::placeholder, input[type="text"]::placeholder {
+            color: #94a3b8;
+        }
+
+        input[type="password"]:focus, input[type="text"]:focus {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Group Card dibuat Full Width */
+        .admin-group {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 20px 18px;
+            border-radius: 22px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            scroll-margin-top: 20px;
+        }
+
+        .admin-group h3 {
+            margin-bottom: 15px;
+            color: #2563eb;
+            border-left: 4px solid #2563eb;
+            padding-left: 10px;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.55);
+            padding: 10px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: background 0.3s ease;
+        }
+
+        .input-row:hover {
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .input-row label {
+            flex: 1.2;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #334155;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .input-row input {
+            margin: 0;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+        }
+
+        .input-link { flex: 3; }
+        .input-token { flex: 1.2; }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 6px 9px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-1px);
+        }
+
+        .btn-action.btn-delete:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-toggle.active {
+            background: rgba(37, 99, 235, 0.15);
+            border-color: rgba(37, 99, 235, 0.4);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+        }
+
+        .btn-toggle.inactive {
+            background: rgba(0, 0, 0, 0.03);
+            opacity: 0.4;
+            filter: grayscale(100%);
+        }
+
+        .btn {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #4338ca);
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-add {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.5);
+            color: #475569;
+            font-size: 0.85rem;
+            padding: 10px 14px;
+            margin-top: 8px;
+            border: 1px dashed rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .btn-add:hover {
+            background: rgba(255, 255, 255, 0.85);
+            color: #0f172a;
+        }
+
+        /* Sticky Bottom Glass Bar */
+        .liquid-action-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 10px 16px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            z-index: 999;
+            flex-wrap: wrap;
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.22);
+            color: #b91c1c;
+        }
+
+        /* Group Tombol Navigasi Cepat */
+        .nav-quick-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 4px 8px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .btn-nav-quick {
+            background: transparent;
+            border: none;
+            color: #2563eb;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 6px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav-quick:hover {
+            background: rgba(37, 99, 235, 0.15);
+        }
+
+        .nav-separator {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        .hidden { display: none !important; }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #0f172a;
+        }
+
+        /* Penyesuaian Responsif Layar Kecil */
+        @media (max-width: 768px) {
+            .input-row {
+                flex-wrap: wrap;
+            }
+            .input-row label {
+                flex: 1 1 100%;
+                margin-bottom: 2px;
+            }
+            .input-link { flex: 2; }
+            .input-token { flex: 1; }
+            .liquid-action-bar {
+                justify-content: center;
+            }
+            .btn-logout, .liquid-action-bar .btn-primary {
+                flex: 1;
+            }
+            .nav-quick-group {
+                width: 100%;
+                justify-content: center;
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Section Login (Kotak di Tengah Saat Belum Login) -->
+    <div id="login-section" class="login-box">
+        <h1>🔐 Admin Login</h1>
+        <input type="password" id="pass-input" placeholder="Sandi Admin">
+        <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="checkPass()">Masuk</button>
+        <a href="siswa.html" class="back-link">← Kembali ke Halaman Siswa</a>
+    </div>
+
+    <!-- Section Admin (Tampilan Full Width Tanpa Div Pembungkus Luar) -->
+    <div id="admin-section" class="hidden">
+        <h1>⚙️ Pengaturan Mapel</h1>
+        <p style="text-align: center; font-size: 0.85rem; color: #64748b; margin-bottom: 25px;">
+            Klik ikon 👁️ untuk Show/Hide, ✏️ untuk Ubah Nama, atau 🗑️ untuk Menghapus Mapel.
+        </p>
+        <div id="form-container" style="text-align: center; color: #64748b; font-size:0.9rem;">
+            Memuat data dari Firebase...
+        </div>
+    </div>
+
+    <!-- Sticky Liquid Glass Bottom Bar -->
+    <div id="action-bar" class="liquid-action-bar hidden">
+        <button class="btn btn-logout" onclick="location.reload()">Logout</button>
+
+        <button class="btn btn-primary" onclick="saveData()">💾 Simpan Perubahan</button>
+
+        <!-- Navigasi Cepat Ke Kelas -->
+        <div class="nav-quick-group">
+            <button class="btn-nav-quick" onclick="scrollToClass('7')">7</button>
+            <span class="nav-separator">|</span>
+            <button class="btn-nav-quick" onclick="scrollToClass('8')">8</button>
+            <span class="nav-separator">|</span>
+            <button class="btn-nav-quick" onclick="scrollToClass('9')">9</button>
+        </div>
+    </div>
+
+    <script>
+        const MASTER_PASS = "admin123";
+        const FIREBASE_URL = "https://linke-asesmen-default-rtdb.asia-southeast1.firebasedatabase.app/asesmen.json";
+        
+        const mapelDefault = ["Matematika", "IPA", "IPS", "Bahasa Indonesia", "Bahasa Inggris", "Pendidikan Pancasila", "Pendidikan Agama", "PJOK", "Seni Budaya", "Prakarya", "Informatika", "Koding", "Bahasa Arab"];
+        let db = { "7": {}, "8": {}, "9": {} };
+
+        async function loadData() {
+            try {
+                const response = await fetch(FIREBASE_URL);
+                const data = await response.json();
+                if (data) {
+                    db = data;
+                } else {
+                    ['7','8','9'].forEach(kls => {
+                        db[kls] = {};
+                        mapelDefault.forEach(m => {
+                            db[kls][m] = { link: "", token: "", visible: false };
+                        });
+                    });
+                }
+                renderForm();
+            } catch (e) {
+                document.getElementById('form-container').innerText = "Gagal memuat data. Periksa koneksi atau Firebase Rules.";
+            }
+        }
+
+        function checkPass() {
+            if(document.getElementById('pass-input').value === MASTER_PASS) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-section').classList.remove('hidden');
+                document.getElementById('action-bar').classList.remove('hidden');
+                loadData();
+            } else { alert("Sandi Salah!"); }
+        }
+
+        function syncInputsToDB() {
+            ['7','8','9'].forEach(kls => {
+                if(!db[kls]) return;
+                for(let m in db[kls]) {
+                    const inputEl = document.getElementById(`input-${kls}-${m}`);
+                    const tokenEl = document.getElementById(`token-${kls}-${m}`);
+                    if(inputEl) db[kls][m].link = inputEl.value;
+                    if(tokenEl) db[kls][m].token = tokenEl.value;
+                }
+            });
+        }
+
+        function renderForm() {
+            const container = document.getElementById('form-container');
+            container.innerHTML = '';
+            ['7','8','9'].forEach(kls => {
+                const romawi = kls=='7'?'VII':kls=='8'?'VIII':'IX';
+                let html = `<div class="admin-group" id="kelas-group-${kls}"><h3>Kelas ${romawi}</h3>`;
+                for(let m in db[kls]) {
+                    const isVisible = db[kls][m].visible;
+                    html += `
+                    <div class="input-row">
+                        <button class="btn-action btn-toggle ${isVisible ? 'active' : 'inactive'}" 
+                                onclick="toggleVisibility('${kls}', '${m}')" title="Klik untuk Show/Hide">
+                            ${isVisible ? '👁️' : '🙈'}
+                        </button>
+                        <label title="${m}">${m}</label>
+                        <input type="text" class="input-link" id="input-${kls}-${m}" value="${db[kls][m].link || ''}" placeholder="Paste link kuis...">
+                        <input type="text" class="input-token" id="token-${kls}-${m}" value="${db[kls][m].token || ''}" placeholder="Token...">
+                        <button class="btn-action" onclick="editMapel('${kls}', '${m}')" title="Ubah Nama Mapel">✏️</button>
+                        <button class="btn-action btn-delete" onclick="deleteMapel('${kls}', '${m}')" title="Hapus Mapel">🗑️</button>
+                    </div>`;
+                }
+                html += `<button class="btn btn-add" onclick="addCustom('${kls}')">+ Mapel Custom</button></div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        function toggleVisibility(kls, mpl) {
+            syncInputsToDB();
+            db[kls][mpl].visible = !db[kls][mpl].visible;
+            renderForm();
+        }
+
+        function editMapel(kls, oldName) {
+            syncInputsToDB();
+            const newName = prompt("Ubah Nama Mata Pelajaran:", oldName);
+            if (newName && newName.trim() !== "" && newName !== oldName) {
+                const cleanName = newName.trim();
+                if (db[kls][cleanName]) {
+                    alert("Nama mata pelajaran sudah ada!");
+                    return;
+                }
+                // Pindahkan data ke nama kunci baru
+                db[kls][cleanName] = { ...db[kls][oldName] };
+                delete db[kls][oldName];
+                renderForm();
+            }
+        }
+
+        function deleteMapel(kls, mpl) {
+            if (confirm(`Apakah Anda yakin ingin menghapus mapel "${mpl}" dari Kelas ${kls == '7' ? 'VII' : kls == '8' ? 'VIII' : 'IX'}?`)) {
+                syncInputsToDB();
+                delete db[kls][mpl];
+                renderForm();
+            }
+        }
+
+        function addCustom(kls) {
+            syncInputsToDB();
+            const name = prompt("Nama Mapel Baru:");
+            if(name && name.trim() !== "") { 
+                const cleanName = name.trim();
+                if (db[kls][cleanName]) {
+                    alert("Nama mata pelajaran sudah ada!");
+                    return;
+                }
+                db[kls][cleanName] = { link: "", token: "", visible: true }; 
+                renderForm(); 
+            }
+        }
+
+        function scrollToClass(kls) {
+            const target = document.getElementById(`kelas-group-${kls}`);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        async function saveData() {
+            syncInputsToDB();
+
+            try {
+                const response = await fetch(FIREBASE_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(db)
+                });
+                if(response.ok) alert("✅ Berhasil Disimpan ke Firebase!");
+                else alert("Gagal menyimpan data ke Firebase.");
+            } catch (e) {
+                alert("Gagal menyimpan data ke cloud.");
+            }
+        }
+    </script>
+</body>
+</html>
