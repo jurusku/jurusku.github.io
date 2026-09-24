@@ -20,17 +20,13 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: radial-gradient(circle at top right, #e8f5e9, #ffffff),
                         radial-gradient(circle at bottom left, #f0fdf4, #ffffff);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            /* Efek Kedipan Terang */
             animation: bgNyala 1.5s infinite alternate ease-in-out;
         }
 
@@ -40,6 +36,10 @@
         }
 
         .wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
             z-index: 10;
             width: 100%;
@@ -48,17 +48,15 @@
         }
 
         .main-logo {
-            width: 100px; /* Ukuran logo lebih proporsional */
+            width: 100px;
             margin-bottom: 20px;
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.05));
             animation: floating 4s ease-in-out infinite;
         }
 
-        /* --- TYPOGRAPHY SECTION --- */
-        
         h1 {
             font-family: 'Fredoka', sans-serif;
-            font-size: 4rem; /* Ukuran Dominan */
+            font-size: 4rem;
             line-height: 1;
             margin-bottom: 5px;
             letter-spacing: -2px;
@@ -72,7 +70,7 @@
 
         .subtitle-main {
             font-family: 'Tahoma', sans-serif;
-            font-size: 1.1rem; /* Ukuran Sedang */
+            font-size: 1.1rem;
             color: var(--text-main);
             font-weight: bold;
             margin-bottom: 8px;
@@ -80,15 +78,13 @@
         }
 
         .school-name {
-            font-size: 0.85rem; /* Ukuran Kecil & Elegan */
+            font-size: 0.85rem;
             color: var(--text-muted);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 3px; /* Jarak antar huruf agar terlihat luas */
+            letter-spacing: 3px;
             margin-bottom: 40px;
         }
-
-        /* --- BUTTON SECTION --- */
 
         .button-group {
             display: flex;
@@ -133,8 +129,6 @@
 
         .btn-small:hover { border-color: var(--primary); color: var(--primary); }
 
-        /* --- ANIMATIONS --- */
-
         @keyframes teksKilau { 
             0% { background-position: 0% center; } 
             100% { background-position: 200% center; } 
@@ -147,38 +141,68 @@
 
         .bg-blob {
             position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 400px;
             height: 400px;
             background: var(--primary);
             filter: blur(100px);
             opacity: 0.08;
-            z-index: -1;
+            z-index: 1;
             border-radius: 50%;
+        }
+
+        /* iFrame Fullscreen Style */
+        #app-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 9999;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-blob"></div>
+    <div id="landing-page">
+        <div class="bg-blob"></div>
 
-    <div class="wrapper">
-        <img src="logo.png" alt="Logo Jurusku" class="main-logo">
+        <div class="wrapper">
+            <img src="logo.png" alt="Logo Jurusku" class="main-logo">
 
-        <h1>JURUSKU</h1>
-        <h2 class="subtitle-main">JUrnal RUtin Siswa & e-buKU</h2>
-        <p class="school-name">SMP NEGERI 3 BABAT</p>
+            <h1>JURUSKU</h1>
+            <h2 class="subtitle-main">JUrnal RUtin Siswa & e-buKU</h2>
+            <p class="school-name">SMP NEGERI 3 BABAT</p>
 
-        <div class="button-group">
-            <button onclick="location.href='1siswa/index.html'" class="btn-main">
-                🚀 SISWA
-            </button>
+            <div class="button-group">
+                <button onclick="openPage('1siswa/index.html')" class="btn-main">
+                    🚀 SISWA
+                </button>
 
-            <div class="sub-buttons">
-                <button onclick="location.href='2guru/index.html'" class="btn-small">👨‍🏫 GURU</button>
-                <button onclick="location.href='4ortu/index.html'" class="btn-small">👨‍👩‍ ORTU</button>
+                <div class="sub-buttons">
+                    <button onclick="openPage('2guru/index.html')" class="btn-small">👨‍🏫 GURU</button>
+                    <button onclick="openPage('4ortu/index.html')" class="btn-small">👨‍👩‍ ORTU</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <iframe id="app-frame" src=""></iframe>
+
+    <script>
+        function openPage(url) {
+            const frame = document.getElementById('app-frame');
+            const landing = document.getElementById('landing-page');
+            
+            frame.src = url;
+            frame.style.display = 'block';
+            landing.style.display = 'none';
+        }
+    </script>
 
 </body>
 </html>
