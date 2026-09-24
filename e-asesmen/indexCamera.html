@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Asesmen Siswa - SMP Negeri 3 Babat</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
+        body {
+            background: #f0f4ff;
+            background-image: radial-gradient(at 0% 0%, #ffdee9 0, transparent 50%), radial-gradient(at 100% 0%, #b5fffc 0, transparent 50%), radial-gradient(at 50% 100%, #fff5bc 0, transparent 50%);
+            background-attachment: fixed;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+            font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden;
+        }
+
+        /* Overlay Awal / Modal Permintaan Izin Kamera */
+        #camera-permission-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 99999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .permission-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 28px;
+            padding: 30px 24px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .permission-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #0984e3, #74b9ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            box-shadow: 0 10px 20px rgba(9, 132, 227, 0.3);
+        }
+
+        .permission-card h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .permission-card p {
+            font-size: 0.9rem;
+            color: #636e72;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .btn-permission {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 184, 148, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-permission:active {
+            transform: scale(0.97);
+        }
+
+        /* Container Overlay untuk membuat latar belakang Toast Blur */
+        #toast-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #toast-container { 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 90%; 
+            max-width: 400px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            pointer-events: none; 
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toast {
+            background: rgba(45, 52, 54, 0.95); backdrop-filter: blur(12px); color: white; padding: 20px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: 600; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; gap: 14px; text-align: center; pointer-events: auto;
+            animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 100%;
+        }
+
+        .toast-msg { line-height: 1.4; }
+        .toast-input { padding: 12px; border-radius: 12px; border: none; width: 100%; margin-bottom: 5px; text-align: center; font-weight: bold; font-size: 1rem; color: #2d3436; outline: none; }
+        .toast-actions { display: flex; gap: 10px; justify-content: center; }
+
+        .toast-btn {
+            padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none;
+            transition: transform 0.2s ease;
+        }
+        .toast-btn:active { transform: scale(0.95); }
+        .btn-yes { background: #00b894; color: white; }
+        .btn-no { background: #dfe6e9; color: #2d3436; }
+        .btn-ok { background: #0984e3; color: white; width: 100%; }
+
+        @keyframes toastIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+
+        .main-wrapper { 
+            width: 100%; max-width: 480px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%); padding: 25px 20px; border-radius: 30px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 1px solid rgba(255, 255, 255, 0.6); text-align: center;
+            max-height: 95vh; display: flex; flex-direction: column;
+        }
+
+        header {
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            padding-bottom: 10px; margin-bottom: 20px; border-bottom: 3px double #2D3436; flex-shrink: 0;
+        }
+
+        .header-logo { width: 55px; height: 55px; object-fit: contain; }
+        .header-text-group { display: flex; flex-direction: column; text-align: center; flex: 1; }
+
+        header h1 { font-weight: 800; font-size: 1.05rem; text-transform: uppercase; color: #2D3436; line-height: 1.2; }
+        header h3 { font-size: 1.2rem; font-weight: 800; color: #2D3436; margin: 2px 0; }
+        header p { font-size: 0.85rem; color: #2D3436; font-weight: 600; letter-spacing: 1px; }
+
+        .menu-container { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 2px; }
+        .menu-container::-webkit-scrollbar { width: 4px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #dfe6e9; border-radius: 10px; }
+
+        .menu-card {
+            display: flex; align-items: center; padding: 16px; border-radius: 20px; background: white;
+            border: 1px solid #f0f0f0; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03); width: 100%; text-align: left;
+        }
+        .menu-card:active { transform: scale(0.97); }
+
+        .icon { width: 50px; height: 50px; border-radius: 14px; display: flex; justify-content: center; align-items: center; font-size: 1.6rem; font-weight: 800; color: white; flex-shrink: 0; }
+        .content { flex-grow: 1; margin-left: 15px; text-align: left; overflow: hidden; }
+        .content h2 { font-size: 1.05rem; font-weight: 700; color: #2D3436; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .arrow { color: #DFE6E9; font-size: 1.1rem; flex-shrink: 0; }
+        
+        .c-7 .icon { background: linear-gradient(135deg, #FF9F43, #FF6B6B); }
+        .c-8 .icon { background: linear-gradient(135deg, #4834D4, #686DE0); }
+        .c-9 .icon { background: linear-gradient(135deg, #27AE60, #2ECC71); }
+        .c-mapel .icon { background: #F1F2F6; box-shadow: none; font-size: 1.5rem; color: #2D3436; }
+
+        .btn-back { 
+            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(15px); color: #4834D4;
+            border: 1px solid rgba(255, 255, 255, 0.8); padding: 14px; border-radius: 20px; font-size: 1rem; 
+            cursor: pointer; font-weight: 700; margin-top: 15px; width: 100%; 
+            box-shadow: 0 5px 20px rgba(31, 38, 135, 0.08); transition: all 0.3s ease; flex-shrink: 0;
+        }
+        .btn-back:active { transform: scale(0.96); }
+
+        #view-exam {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: white; z-index: 9999; display: flex; flex-direction: column;
+        }
+        .exam-header {
+            background: #2D3436; color: white; padding: 6px 15px;
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+            gap: 10px;
+        }
+        .exam-header h3 { font-size: 0.9rem; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Mengatur Kamera & Tombol Keluar dalam satu grup kanan */
+        .exam-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .btn-close-exam {
+            background: #e74c3c; color: white; border: none; padding: 6px 14px;
+            border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+            white-space: nowrap;
+        }
+        #exam-frame { width: 100%; flex-grow: 1; border: none; }
+
+        /* Kamera Kecil di Sebelah Kiri Tombol Keluar Ujian */
+        .camera-container {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #00b894;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .camera-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Efek mirror */
+        }
+        .camera-badge {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(231, 76, 60, 0.9);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+            z-index: 2;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        #lock-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center; padding: 30px;
+        }
+        #lock-overlay h2 { font-size: 1.5rem; margin-bottom: 10px; color: #ff7675; }
+        #lock-overlay p { font-size: 0.95rem; margin-bottom: 20px; color: #dfe6e9; max-width: 400px; line-height: 1.5; }
+        .btn-lock {
+            background: linear-gradient(135deg, #0984e3, #74b9ff); color: white; border: none;
+            padding: 14px 28px; border-radius: 16px; font-weight: 700; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 8px 25px rgba(9, 132, 227, 0.4);
+        }
+
+        .hidden { display: none !important; }
+        .animate-view { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <!-- Modal Permintaan Akses Kamera Awal -->
+    <div id="camera-permission-overlay">
+        <div class="permission-card">
+            <div class="permission-icon">
+                <img src="https://cdn-icons-png.flaticon.com/512/408/408474.png" alt="Kamera" style="width: 36px; height: 36px; filter: brightness(0) invert(1);">
+            </div>
+            <h2>Izinkan Akses Kamera</h2>
+            <p>Aplikasi memerlukan izin pengawasan kamera saat ujian berlangsung. Silakan izinkan akses kamera untuk melanjutkan.</p>
+            <button class="btn-permission" onclick="initCameraPermission()">IZINKAN KAMERA</button>
+        </div>
+    </div>
+
+    <!-- Overlay latar belakang blur untuk Toast -->
+    <div id="toast-overlay" class="hidden">
+        <div id="toast-container"></div>
+    </div>
+
+    <div id="lock-overlay">
+        <h2>
+            <img src="https://cdn-icons-png.flaticon.com/512/595/595067.png" alt="⚠" style="height: 1em; vertical-align: middle; margin-right: 6px;">
+            Peringatan
+            <img src="https://cdn-icons-png.flaticon.com/512/595/595067.png" alt="⚠" style="height: 1em; vertical-align: middle; margin-left: 6px;">
+        </h2>
+        <p style="text-align: left; line-height: 1.8;">
+            <img src="https://cdn-icons-png.flaticon.com/512/456/456112.png" alt="🔒" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Portal Asesmen Full Screen<br>
+            <img src="https://cdn-icons-png.flaticon.com/512/2576/2576762.png" alt="⛔" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Tidak bisa keluar tanpa TOKEN<br>
+            <img src="https://cdn-icons-png.flaticon.com/512/190/190406.png" alt="❌" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Dilarang buka aplikasi lain<br>
+            <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="✔" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Kerjakan dengan Jujur<br>
+            <img src="https://cdn-icons-png.flaticon.com/512/408/408474.png" alt="📷" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Dipantau kamera pengawas
+        </p>
+        <button class="btn-lock" onclick="requestFullScreen()">Mulai</button>
+    </div>
+
+    <div class="main-wrapper">
+        <header>
+            <img src="logo.ico" alt="Logo" class="header-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\'><rect width=\'50\' height=\'50\' fill=\'%23dfe6e9\' rx=\'10\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'central\' text-anchor=\'middle\' font-size=\'20\' font-weight=\'bold\' fill=\'%232d3436\'>3B</text></svg>'">
+            <div class="header-text-group">
+                <h1 id="main-title">Penilaian Asesmen Tengah Semester</h1>
+                <h3 id="school-name">SMP Negeri 3 Babat</h3>
+                <p id="main-desc">TP 2026/2027</p>
+            </div>
+        </header>
+
+        <nav id="view-class" class="menu-container animate-view">
+            <button class="menu-card c-7" onclick="showMapel('7')">
+                <div class="icon">7</div>
+                <div class="content"><h2>Kelas VII</h2></div>
+                <div class="arrow">➜</div>
+            </button>
+            <button class="menu-card c-8" onclick="showMapel('8')">
+                <div class="icon">8</div>
+                <div class="content"><h2>Kelas VIII</h2></div>
+                <div class="arrow">➜</div>
+            </button>
+            <button class="menu-card c-9" onclick="showMapel('9')">
+                <div class="icon">9</div>
+                <div class="content"><h2>Kelas IX</h2></div>
+                <div class="arrow">➜</div>
+            </button>
+        </nav>
+
+        <nav id="view-mapel" class="menu-container hidden">
+            <div id="mapel-list" class="menu-container" style="max-height: 50vh;"></div>
+            <button class="btn-back" onclick="showClass()">Kembali ke Pilih Kelas</button>
+        </nav>
+    </div>
+
+    <div id="view-exam" class="hidden">
+        <div class="exam-header">
+            <h3 id="exam-title-bar">Sedang Mengerjakan Ujian...</h3>
+            <div class="exam-header-right">
+                <!-- Stream Kamera Kecil di Kiri Tulisan Keluar Ujian -->
+                <div class="camera-container" title="Kamera Pengawas">
+                    <div class="camera-badge"></div>
+                    <video id="webcam-preview" autoplay playsinline muted></video>
+                </div>
+                <button class="btn-close-exam" onclick="confirmCloseExam()">Keluar Ujian</button>
+            </div>
+        </div>
+        <iframe id="exam-frame" src=""></iframe>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://linke-asesmen-default-rtdb.asia-southeast1.firebasedatabase.app/asesmen.json";
+        let isExamActive = false;
+        let currentExamToken = ""; // Variable untuk menyimpan token mapel saat ini
+        let cameraStream = null; // Ref stream kamera
+
+        // Cek apakah pengguna mengakses dari perangkat HP/Mobile
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Meminta Izin Kamera Sebelum Masuk
+        async function initCameraPermission() {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    // Jika HP gunakan kamera depan (user), jika perangkat lain gunakan default
+                    const videoConstraints = isMobileDevice() 
+                        ? { facingMode: "user", width: { ideal: 320 }, height: { ideal: 240 } }
+                        : { width: { ideal: 320 }, height: { ideal: 240 } };
+
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: videoConstraints,
+                        audio: false
+                    });
+                    
+                    // Sembunyikan modal izin dan tampilkan halaman utama
+                    document.getElementById('camera-permission-overlay').classList.add('hidden');
+                } else {
+                    alert("Perangkat/browser Anda tidak mendukung akses kamera.");
+                }
+            } catch (err) {
+                console.error("Gagal mendapatkan akses kamera:", err);
+                alert("Akses kamera ditolak. Anda harus mengizinkan akses kamera pada browser untuk menggunakan portal ujian ini.");
+            }
+        }
+
+        // Menjaga agar toast tetap di tengah layar saat keyboard muncul di HP
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateToastPosition);
+            window.visualViewport.addEventListener('scroll', updateToastPosition);
+        }
+
+        function updateToastPosition() {
+            const container = document.getElementById('toast-container');
+            if (container && window.visualViewport) {
+                container.style.top = (window.visualViewport.offsetTop + window.visualViewport.height / 2) + 'px';
+            }
+        }
+
+        // Fungsi untuk membersihkan seluruh toast aktif dan menyembunyikan overlay blur
+        function clearAllToasts() {
+            const container = document.getElementById('toast-container');
+            if (container) {
+                container.innerHTML = '';
+            }
+            document.getElementById('toast-overlay').classList.add('hidden');
+        }
+
+        function closeToast(toastElement) {
+            toastElement.remove();
+            const container = document.getElementById('toast-container');
+            if (container.children.length === 0) {
+                document.getElementById('toast-overlay').classList.add('hidden');
+            }
+        }
+
+        function showToast(message, type = 'info', onYes = null, btnText = "OK") {
+            const overlay = document.getElementById('toast-overlay');
+            const container = document.getElementById('toast-container');
+            overlay.classList.remove('hidden'); // Tampilkan overlay blur di belakang
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            let actionsHtml = `<button class="toast-btn btn-ok" id="toast-close-btn">${btnText}</button>`;
+            
+            if (type === 'confirm') {
+                actionsHtml = `
+                    <div class="toast-actions">
+                        <button class="toast-btn btn-yes" id="toast-yes">IYA</button>
+                        <button class="toast-btn btn-no" id="toast-no">TIDAK</button>
+                    </div>
+                `;
+            } else if (type === 'prompt') {
+                actionsHtml = `
+                    <input type="text" class="toast-input" id="toast-input" placeholder="Masukkan Token">
+                    <div class="toast-actions">
+                        <button class="toast-btn btn-yes" id="toast-submit">SUBMIT</button>
+                        <button class="toast-btn btn-no" id="toast-cancel">BATAL</button>
+                    </div>
+                `;
+            }
+
+            toast.innerHTML = `<div class="toast-msg">${message}</div>${actionsHtml}`;
+            container.appendChild(toast);
+            updateToastPosition();
+
+            if (type === 'info') {
+                toast.querySelector('#toast-close-btn').onclick = () => {
+                    closeToast(toast);
+                    if (onYes) onYes();
+                };
+            } else if (type === 'confirm' && onYes) {
+                toast.querySelector('#toast-yes').onclick = () => {
+                    closeToast(toast);
+                    onYes();
+                };
+                toast.querySelector('#toast-no').onclick = () => {
+                    closeToast(toast);
+                };
+            } else if (type === 'prompt' && onYes) {
+                const input = toast.querySelector('#toast-input');
+                
+                setTimeout(() => {
+                    input.focus();
+                    if (input.scrollIntoViewIfNeeded) {
+                        input.scrollIntoViewIfNeeded(true);
+                    } else {
+                        input.scrollIntoView({ block: 'center' });
+                    }
+                }, 100);
+
+                toast.querySelector('#toast-submit').onclick = () => {
+                    const val = input.value;
+                    closeToast(toast);
+                    onYes(val);
+                };
+                toast.querySelector('#toast-cancel').onclick = () => {
+                    closeToast(toast);
+                };
+            }
+        }
+
+        function requestFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(() => {});
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+            document.getElementById('lock-overlay').classList.add('hidden');
+        }
+
+        // Keluar dari mode fullscreen secara programmatic
+        function exitFullScreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', handleFullscreenExit);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenExit);
+        document.addEventListener('mozfullscreenchange', handleFullscreenExit);
+        document.addEventListener('MSFullscreenChange', handleFullscreenExit);
+
+        function handleFullscreenExit() {
+            if (!document.fullscreenElement && !document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
+                if (isExamActive) {
+                    forceResetToHome();
+                } else {
+                    document.getElementById('lock-overlay').classList.remove('hidden');
+                }
+            }
+        }
+
+        function forceResetToHome() {
+            isExamActive = false;
+            const iframe = document.getElementById('exam-frame');
+            iframe.src = "";
+            document.getElementById('view-exam').classList.add('hidden');
+            
+            clearAllToasts();
+            showClass();
+
+            showToast('<img src="https://cdn-icons-png.flaticon.com/512/595/595067.png" alt="Peringatan" style="height: 1.2em; vertical-align: middle; margin-right: 6px;"> PELANGGARAN: Anda terdeteksi keluar dari mode layar penuh (Fullscreen). Sesi ujian dihentikan.');
+            document.getElementById('lock-overlay').classList.remove('hidden');
+        }
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'u')) {
+                e.preventDefault();
+                showToast("Peringatan: Aksi atau pintasan tombol dibatasi oleh sistem.");
+            }
+        });
+
+        function getMapelEmoji(name) {
+            const n = name.toLowerCase();
+            if (n.includes('matematika') || n.includes('mtk')) return '📐';
+            if (n.includes('ipa')) return '🧪';
+            if (n.includes('ips')) return '🌍';
+            if (n.includes('arab')) return '<img src="https://flagcdn.com/24x18/sa.png" alt="SA" style="width:20px; vertical-align:middle;" />';
+            if (n.includes('indo')) return '<img src="https://flagcdn.com/24x18/id.png" alt="ID" style="width:20px; vertical-align:middle;" />';
+            if (n.includes('inggris')) return '<img src="https://flagcdn.com/24x18/gb.png" alt="GB" style="width:20px; vertical-align:middle;" />';
+            if (n.includes('agama')) return '🕌';
+            if (n.includes('pjok')) return '⚽';
+            if (n.includes('seni')) return '🎨';
+            if (n.includes('tik') || n.includes('informatika')) return '💻';
+            return '📚';
+        }
+
+        async function showMapel(kelas) {
+            try {
+                const response = await fetch(FIREBASE_URL);
+                if (!response.ok) throw new Error("Gagal mengambil data server");
+                
+                const data = await response.json();
+                if (!data) { 
+                    showToast("Belum ada data kuis tersimpan di server."); 
+                    return; 
+                }
+
+                document.getElementById('view-class').classList.add('hidden');
+                const viewMapel = document.getElementById('view-mapel');
+                viewMapel.classList.remove('hidden');
+                viewMapel.classList.add('animate-view');
+                
+                document.getElementById('main-title').innerText = "Daftar Mata Pelajaran";
+                document.getElementById('school-name').innerText = "Kelas " + kelas;
+                document.getElementById('main-desc').innerText = "Silahkan pilih mapel ujian";
+                
+                const list = document.getElementById('mapel-list');
+                list.innerHTML = '';
+                
+                let visibleCount = 0;
+                const mapels = data[kelas] || {};
+
+                for (let m in mapels) {
+                    if (mapels[m] && mapels[m].visible) {
+                        visibleCount++;
+                        const btn = document.createElement('button');
+                        btn.className = 'menu-card c-mapel';
+                        btn.innerHTML = `<div class="icon">${getMapelEmoji(m)}</div><div class="content"><h2>${m}</h2></div><div class="arrow">🚀</div>`;
+                        
+                        btn.onclick = () => {
+                            let rawLink = mapels[m].link;
+                            if (rawLink && rawLink.trim() !== "") {
+                                let targetLink = rawLink.trim();
+                                if (!targetLink.startsWith('http://') && !targetLink.startsWith('https://')) {
+                                    targetLink = 'https://' + targetLink;
+                                }
+                                openExam(m, targetLink, mapels[m].token || "");
+                            } else {
+                                showToast("Informasi: Link ujian untuk mata pelajaran ini belum tersedia.");
+                            }
+                        };
+                        list.appendChild(btn);
+                    }
+                }
+
+                if (visibleCount === 0) {
+                    list.innerHTML = "<div style='padding:30px; color:#b2bec3; text-align:center;'>Tidak ada kuis aktif untuk kelas ini.</div>";
+                }
+            } catch (e) {
+                showToast("Gagal terhubung ke server. Periksa kembali koneksi internet Anda.");
+            }
+        }
+
+        function openExam(mapelName, url, token) {
+            isExamActive = true; 
+            currentExamToken = token;
+            document.getElementById('exam-title-bar').innerText = "Ujian: " + mapelName;
+            
+            // Hubungkan stream kamera yang sudah aktif ke video element
+            const videoElement = document.getElementById('webcam-preview');
+            if (videoElement && cameraStream) {
+                videoElement.srcObject = cameraStream;
+            }
+
+            const iframe = document.getElementById('exam-frame');
+            iframe.src = url;
+            document.getElementById('view-exam').classList.remove('hidden');
+        }
+
+        // Konfirmasi keluar ujian dengan form Prompt (meminta Token)
+        function confirmCloseExam() {
+            showToast("Masukkan TOKEN untuk keluar dari ujian ini:", 'prompt', (inputToken) => {
+                // Jika token benar
+                if (inputToken === currentExamToken) {
+                    showToast('<img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Benar" style="height: 1.2em; vertical-align: middle; margin-right: 6px;"> Token Benar!', 'info', () => {
+                        isExamActive = false;
+                        const iframe = document.getElementById('exam-frame');
+                        iframe.src = ""; 
+                        document.getElementById('view-exam').classList.add('hidden');
+                        showJurusku();
+                        
+                        // Keluar dari mode Fullscreen dan tampilkan overlay awal
+                        exitFullScreen();
+                        document.getElementById('lock-overlay').classList.remove('hidden');
+                    }, "Kembali ke Halaman Utama");
+                } else {
+                    // Jika token salah
+                    showToast('<img src="https://cdn-icons-png.flaticon.com/512/190/190406.png" alt="Salah" style="height: 1.2em; vertical-align: middle; margin-right: 6px;"> Token salah! Anda tidak dapat keluar.');
+                }
+            });
+        }
+
+        function showClass() {
+            clearAllToasts();
+            
+            document.getElementById('view-mapel').classList.add('hidden');
+            document.getElementById('view-class').classList.remove('hidden');
+            document.getElementById('main-title').innerText = "Penilaian Sumatif Akhir Tahun";
+            document.getElementById('school-name').innerText = "SMP Negeri 3 Babat";
+            document.getElementById('main-desc').innerText = "TP 2025/2026";
+        }
+		
+		// Mengarahkan ke jurusku.online saat kembali ke halaman utama
+        function showJurusku() {
+            window.location.href = "https://jurusku.online";
+        }
+    </script>
+</body>
+</html>
