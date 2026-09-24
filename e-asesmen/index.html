@@ -18,33 +18,57 @@
             font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden;
         }
 
+        /* Container Overlay untuk membuat latar belakang Toast Blur */
+        #toast-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         #toast-container { 
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
-            z-index: 999999; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 90%; 
+            max-width: 400px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            pointer-events: none; 
+            align-items: center;
+            justify-content: center;
         }
         
         .toast {
-            background: rgba(45, 52, 54, 0.95); backdrop-filter: blur(12px); color: white; padding: 16px 20px; border-radius: 20px;
-            font-size: 0.9rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            display: flex; flex-direction: column; gap: 12px; text-align: center; pointer-events: auto;
-            animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(45, 52, 54, 0.95); backdrop-filter: blur(12px); color: white; padding: 20px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: 600; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; gap: 14px; text-align: center; pointer-events: auto;
+            animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 100%;
         }
 
         .toast-msg { line-height: 1.4; }
-        .toast-input { padding: 10px; border-radius: 8px; border: none; width: 100%; margin-bottom: 5px; text-align: center; font-weight: bold; font-size: 1rem; color: #2d3436; outline: none; }
+        .toast-input { padding: 12px; border-radius: 12px; border: none; width: 100%; margin-bottom: 5px; text-align: center; font-weight: bold; font-size: 1rem; color: #2d3436; outline: none; }
         .toast-actions { display: flex; gap: 10px; justify-content: center; }
 
         .toast-btn {
-            padding: 8px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none;
+            padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none;
             transition: transform 0.2s ease;
         }
         .toast-btn:active { transform: scale(0.95); }
-        .btn-yes { background: #ff7675; color: white; }
+        .btn-yes { background: #00b894; color: white; }
         .btn-no { background: #dfe6e9; color: #2d3436; }
         .btn-ok { background: #0984e3; color: white; width: 100%; }
 
-        @keyframes toastIn { from { opacity: 0; transform: translateY(-20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toastIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
 
         .main-wrapper { 
             width: 100%; max-width: 480px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px) saturate(180%);
@@ -128,12 +152,25 @@
     </style>
 </head>
 <body>
-    <div id="toast-container"></div>
+    <!-- Overlay latar belakang blur untuk Toast -->
+    <div id="toast-overlay" class="hidden">
+        <div id="toast-container"></div>
+    </div>
 
     <div id="lock-overlay">
-        <h2>🔒 Portal Asesmen Terkunci</h2>
-        <p>Aplikasi berjalan dalam mode aman (Safe Exam Browser). Ketuk tombol di bawah untuk masuk ke mode layar penuh dan memulai asesmen.</p>
-        <button class="btn-lock" onclick="requestFullScreen()">Mulai Asesmen / Masuk Layar Penuh</button>
+    <h2>
+	  <img src="https://cdn-icons-png.flaticon.com/512/595/595067.png" alt="⚠" style="height: 1em; vertical-align: middle; margin-right: 6px;">
+	  Peringatan
+	  <img src="https://cdn-icons-png.flaticon.com/512/595/595067.png" alt="⚠" style="height: 1em; vertical-align: middle; margin-left: 6px;">
+	</h2>
+        <p style="text-align: left; line-height: 1.8;">
+  <img src="https://cdn-icons-png.flaticon.com/512/456/456112.png" alt="🔒" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Portal Asesmen Full Screen<br>
+  <img src="https://cdn-icons-png.flaticon.com/512/2576/2576762.png" alt="⛔" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Tidak bisa keluar tanpa TOKEN<br>
+  <img src="https://cdn-icons-png.flaticon.com/512/190/190406.png" alt="❌" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Dilarang buka aplikasi lain<br>
+  <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="✔" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Kerjakan dengan Jujur<br>
+  <img src="https://cdn-icons-png.flaticon.com/512/408/408474.png" alt="📷" style="height: 1.2em; vertical-align: middle; margin-right: 6px;">Dipantau kamera pengawas
+</p>
+        <button class="btn-lock" onclick="requestFullScreen()">Mulai</button>
     </div>
 
     <div class="main-wrapper">
@@ -183,20 +220,45 @@
         let isExamActive = false;
         let currentExamToken = ""; // Variable untuk menyimpan token mapel saat ini
 
-        // Fungsi untuk membersihkan seluruh toast aktif
+        // Menjaga agar toast tetap di tengah layar saat keyboard muncul di HP
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateToastPosition);
+            window.visualViewport.addEventListener('scroll', updateToastPosition);
+        }
+
+        function updateToastPosition() {
+            const container = document.getElementById('toast-container');
+            if (container && window.visualViewport) {
+                container.style.top = (window.visualViewport.offsetTop + window.visualViewport.height / 2) + 'px';
+            }
+        }
+
+        // Fungsi untuk membersihkan seluruh toast aktif dan menyembunyikan overlay blur
         function clearAllToasts() {
             const container = document.getElementById('toast-container');
             if (container) {
                 container.innerHTML = '';
             }
+            document.getElementById('toast-overlay').classList.add('hidden');
         }
 
-        function showToast(message, type = 'info', onYes = null) {
+        function closeToast(toastElement) {
+            toastElement.remove();
             const container = document.getElementById('toast-container');
+            if (container.children.length === 0) {
+                document.getElementById('toast-overlay').classList.add('hidden');
+            }
+        }
+
+        function showToast(message, type = 'info', onYes = null, btnText = "OK") {
+            const overlay = document.getElementById('toast-overlay');
+            const container = document.getElementById('toast-container');
+            overlay.classList.remove('hidden'); // Tampilkan overlay blur di belakang
+
             const toast = document.createElement('div');
             toast.className = 'toast';
 
-            let actionsHtml = `<button class="toast-btn btn-ok" onclick="this.closest('.toast').remove()">OK</button>`;
+            let actionsHtml = `<button class="toast-btn btn-ok" id="toast-close-btn">${btnText}</button>`;
             
             if (type === 'confirm') {
                 actionsHtml = `
@@ -217,25 +279,40 @@
 
             toast.innerHTML = `<div class="toast-msg">${message}</div>${actionsHtml}`;
             container.appendChild(toast);
+            updateToastPosition();
 
-            if (type === 'confirm' && onYes) {
+            if (type === 'info') {
+                toast.querySelector('#toast-close-btn').onclick = () => {
+                    closeToast(toast);
+                    if (onYes) onYes();
+                };
+            } else if (type === 'confirm' && onYes) {
                 toast.querySelector('#toast-yes').onclick = () => {
-                    toast.remove();
+                    closeToast(toast);
                     onYes();
                 };
                 toast.querySelector('#toast-no').onclick = () => {
-                    toast.remove();
+                    closeToast(toast);
                 };
             } else if (type === 'prompt' && onYes) {
                 const input = toast.querySelector('#toast-input');
-                input.focus(); // Fokus ke input box
+                
+                setTimeout(() => {
+                    input.focus();
+                    if (input.scrollIntoViewIfNeeded) {
+                        input.scrollIntoViewIfNeeded(true);
+                    } else {
+                        input.scrollIntoView({ block: 'center' });
+                    }
+                }, 100);
+
                 toast.querySelector('#toast-submit').onclick = () => {
                     const val = input.value;
-                    toast.remove();
+                    closeToast(toast);
                     onYes(val);
                 };
                 toast.querySelector('#toast-cancel').onclick = () => {
-                    toast.remove();
+                    closeToast(toast);
                 };
             }
         }
@@ -284,11 +361,10 @@
             iframe.src = "";
             document.getElementById('view-exam').classList.add('hidden');
             
-            // Bersihkan semua toast gantung sebelum kembali ke halaman utama
             clearAllToasts();
             showClass();
 
-            showToast("⚠️ PELANGGARAN: Anda terdeteksi keluar dari mode layar penuh (Fullscreen). Sesi ujian dihentikan.");
+            showToast('<img src="https://cdn-icons-png.flaticon.com/512/595/595067.png" alt="Peringatan" style="height: 1.2em; vertical-align: middle; margin-right: 6px;"> PELANGGARAN: Anda terdeteksi keluar dari mode layar penuh (Fullscreen). Sesi ujian dihentikan.');
             document.getElementById('lock-overlay').classList.remove('hidden');
         }
 
@@ -386,24 +462,25 @@
             showToast("Masukkan TOKEN untuk keluar dari ujian ini:", 'prompt', (inputToken) => {
                 // Jika token benar
                 if (inputToken === currentExamToken) {
-                    isExamActive = false;
-                    const iframe = document.getElementById('exam-frame');
-                    iframe.src = ""; 
-                    document.getElementById('view-exam').classList.add('hidden');
-                    showClass();
-                    
-                    // Keluar dari mode Fullscreen (menjadi normal) dan tampilkan overlay pembuka kembali
-                    exitFullScreen();
-                    document.getElementById('lock-overlay').classList.remove('hidden');
+                    showToast('<img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Benar" style="height: 1.2em; vertical-align: middle; margin-right: 6px;"> Token Benar!', 'info', () => {
+                        isExamActive = false;
+                        const iframe = document.getElementById('exam-frame');
+                        iframe.src = ""; 
+                        document.getElementById('view-exam').classList.add('hidden');
+                        showClass();
+                        
+                        // Keluar dari mode Fullscreen dan tampilkan overlay awal
+                        exitFullScreen();
+                        document.getElementById('lock-overlay').classList.remove('hidden');
+                    }, "Kembali ke Halaman Utama");
                 } else {
-                    // Jika token salah, tidak ada aksi tutup (halaman tetap full screen)
-                    showToast("Token salah! Anda tidak dapat keluar.");
+                    // Jika token salah
+                    showToast('<img src="https://cdn-icons-png.flaticon.com/512/190/190406.png" alt="Salah" style="height: 1.2em; vertical-align: middle; margin-right: 6px;"> Token salah! Anda tidak dapat keluar.');
                 }
             });
         }
 
         function showClass() {
-            // Bersihkan semua toast berjalan ketika berpindah/kembali ke halaman utama
             clearAllToasts();
             
             document.getElementById('view-mapel').classList.add('hidden');
