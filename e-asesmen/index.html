@@ -300,7 +300,7 @@
             if (isExamActive) {
                 // Jika tinggi area tampilan berkurang lebih dari 35% dari layar HP total (karakteristik utama Split Screen)
                 if (window.innerHeight < (screen.height * 0.65)) {
-                    forceResetToHome("⚠️ PELANGGARAN: Terdeteksi penggunaan Layar Terbagi (Split Screen). Ujian dihentikan.");
+                    forceResetToHome("⚠️ PELANGGARAN: Terdeteksi membuka aplikasi lain. Ujian dihentikan.");
                 }
             }
         });
@@ -310,13 +310,13 @@
         // ==========================================
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && isExamActive) {
-                forceResetToHome("⚠️ PELANGGARAN: Anda membuka aplikasi lain atau membagi layar. Sesi ujian dihentikan.");
+                forceResetToHome("⚠️ PELANGGARAN: Terdeteksi membuka aplikasi lain. Ujian dihentikan.");
             }
         });
 
         window.addEventListener('blur', () => {
             if (isExamActive) {
-                forceResetToHome("⚠️ PELANGGARAN: Layar ujian kehilangan fokus. Sesi ujian dihentikan.");
+                forceResetToHome("⚠️ PELANGGARAN: Terdeteksi membuka aplikasi lain. Ujian dihentikan.");
             }
         });
 
