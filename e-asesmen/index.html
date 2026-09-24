@@ -182,6 +182,7 @@
         const FIREBASE_URL = "https://linke-asesmen-default-rtdb.asia-southeast1.firebasedatabase.app/asesmen.json";
         let isExamActive = false;
         let currentExamToken = ""; // Variable untuk menyimpan token mapel saat ini
+        let initialInnerHeight = window.innerHeight; // Acuan tinggi layar awal
 
         // Fungsi untuk membersihkan seluruh toast aktif
         function clearAllToasts() {
@@ -271,14 +272,14 @@
         function handleFullscreenExit() {
             if (!document.fullscreenElement && !document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
                 if (isExamActive) {
-                    forceResetToHome();
+                    forceResetToHome("⚠️ PELANGGARAN: Anda terdeteksi keluar dari mode layar penuh (Fullscreen). Sesi ujian dihentikan.");
                 } else {
                     document.getElementById('lock-overlay').classList.remove('hidden');
                 }
             }
         }
 
-        function forceResetToHome() {
+        function forceResetToHome(reasonMessage) {
             isExamActive = false;
             const iframe = document.getElementById('exam-frame');
             iframe.src = "";
@@ -288,9 +289,36 @@
             clearAllToasts();
             showClass();
 
-            showToast("⚠️ PELANGGARAN: Anda terdeteksi keluar dari mode layar penuh (Fullscreen). Sesi ujian dihentikan.");
+            showToast(reasonMessage || "⚠️ PELANGGARAN: Terdeteksi tindakan tidak diizinkan. Sesi ujian dihentikan.");
             document.getElementById('lock-overlay').classList.remove('hidden');
         }
+
+        // ==========================================
+        // SOLUSI A: Deteksi Perubahan Ukuran Layar (Split Screen)
+        // ==========================================
+        window.addEventListener('resize', () => {
+            if (isExamActive) {
+                // Jika tinggi area tampilan berkurang lebih dari 35% dari layar HP total (karakteristik utama Split Screen)
+                if (window.innerHeight < (screen.height * 0.65)) {
+                    forceResetToHome("⚠️ PELANGGARAN: Terdeteksi penggunaan Layar Terbagi (Split Screen). Ujian dihentikan.");
+                }
+            }
+        });
+
+        // ==========================================
+        // SOLUSI B: Deteksi Visibilitas & Fokus Layar (Tab/App Switch & Split Screen Active)
+        // ==========================================
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isExamActive) {
+                forceResetToHome("⚠️ PELANGGARAN: Anda membuka aplikasi lain atau membagi layar. Sesi ujian dihentikan.");
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            if (isExamActive) {
+                forceResetToHome("⚠️ PELANGGARAN: Layar ujian kehilangan fokus. Sesi ujian dihentikan.");
+            }
+        });
 
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
