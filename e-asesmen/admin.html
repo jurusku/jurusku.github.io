@@ -15,7 +15,9 @@
         .admin-group h3 { margin-bottom: 15px; color: #555; border-left: 5px solid #764ba2; padding-left: 10px; }
         .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: white; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
         .input-row label { flex: 1; font-size: 0.8rem; font-weight: bold; color: #555; }
-        .input-row input { flex: 2; margin: 0; font-size: 0.85rem; padding: 8px; }
+        .input-row input { margin: 0; font-size: 0.85rem; padding: 8px; }
+        .input-link { flex: 2; }
+        .input-token { flex: 1; }
         .btn-toggle { background: #eee; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; transition: 0.3s; }
         .btn-toggle.active { background: #764ba2; color: white; }
         .btn-toggle.inactive { background: #dfe4ea; color: #a4b0be; text-decoration: line-through; }
@@ -61,7 +63,7 @@
                 } else {
                     ['7','8','9'].forEach(kls => {
                         mapelDefault.forEach(m => {
-                            db[kls][m] = { link: "", visible: false };
+                            db[kls][m] = { link: "", token: "", visible: false };
                         });
                     });
                 }
@@ -94,7 +96,8 @@
                             ${isVisible ? '👁️' : '🙈'}
                         </button>
                         <label>${m}</label>
-                        <input type="text" id="input-${kls}-${m}" value="${db[kls][m].link}" placeholder="Paste link kuis...">
+                        <input type="text" class="input-link" id="input-${kls}-${m}" value="${db[kls][m].link || ''}" placeholder="Paste link kuis...">
+                        <input type="text" class="input-token" id="token-${kls}-${m}" value="${db[kls][m].token || ''}" placeholder="Token...">
                     </div>`;
                 }
                 html += `<button class="btn btn-add" onclick="addCustom('${kls}')">+ Mapel Custom</button></div>`;
@@ -110,7 +113,7 @@
         function addCustom(kls) {
             const name = prompt("Nama Mapel Baru:");
             if(name) { 
-                db[kls][name] = { link: "", visible: true }; 
+                db[kls][name] = { link: "", token: "", visible: true }; 
                 renderForm(); 
             }
         }
@@ -119,7 +122,9 @@
             ['7','8','9'].forEach(kls => {
                 for(let m in db[kls]) {
                     const inputEl = document.getElementById(`input-${kls}-${m}`);
+                    const tokenEl = document.getElementById(`token-${kls}-${m}`);
                     if(inputEl) db[kls][m].link = inputEl.value;
+                    if(tokenEl) db[kls][m].token = tokenEl.value;
                 }
             });
 
