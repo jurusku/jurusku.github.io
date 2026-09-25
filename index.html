@@ -49,6 +49,10 @@ h1 {
     padding:14px; border-radius:18px; font-weight:700; font-size:.85rem; border:1px solid rgba(0,0,0,.05); cursor:pointer; transition:.2s;
 }
 .btn-small:hover { border-color:var(--primary); color:var(--primary); }
+.btn-asesmen {
+    flex: 1; background: #3498db; backdrop-filter: blur(10px); color: #ffffff;
+    padding: 14px; border-radius: 18px; font-weight: 700; font-size: .85rem; border: 1px solid rgba(0,0,0,.05); cursor: pointer; transition: .2s;
+}
 @keyframes teksKilau { 0% { background-position:0% center; } 100% { background-position:200% center; } }
 @keyframes floating { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .bg-blob {
@@ -106,6 +110,7 @@ h1 {
 
         <div class="button-group">
             <button onclick="openPage('siswa')" class="btn-main">🚀 SISWA</button>
+			<button class="btn-asesmen" onclick="openPage('ea_index')">📝 e-Asesmen</button>
             <div class="sub-buttons">
                 <button onclick="openPage('guru')" class="btn-small">👨‍🏫 GURU</button>
                 <button onclick="openPage('ortu')" class="btn-small">👨‍👩‍ ORTU</button>
