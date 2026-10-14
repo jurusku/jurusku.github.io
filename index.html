@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Renewal Invoice - OVERDUE (USD)</title>
+    <script>
+        // ===== EXPIRY GUARD: after Oct 15, 2026 23:59 (viewer's local time) the page becomes blank =====
+        window.EXPIRY_TIME = new Date(2026, 9, 15, 23, 59, 0).getTime(); // month 0-based: 9 = October
+        (function () {
+            if (Date.now() >= window.EXPIRY_TIME) {
+                document.documentElement.classList.add('expired');
+                document.title = '';
+            }
+        })();
+    </script>
+    <style>
+        /* Blank page once the due date has passed: hide everything */
+        html.expired, html.expired body { background: #fff !important; background-image: none !important; overflow: hidden !important; }
+        html.expired body > * { display: none !important; }
+    </style>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        html, body { max-width: 100%; overflow-x: hidden; }
+        .wrap-any { overflow-wrap: anywhere; word-break: break-word; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .glow-bg-light {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.06) 0%, rgba(99, 102, 241, 0.05) 50%, rgba(255, 255, 255, 0) 70%);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulse-glow 7s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+        }
+
+        @keyframes alert-pulse-light {
+            0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(225, 29, 72, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+        }
+        .pulse-danger-light { animation: alert-pulse-light 2s infinite; }
+
+        .shimmer-light {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer-anim 2.5s infinite;
+        }
+        @keyframes shimmer-anim {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Toast animation (bottom-right: copy confirmation) */
+        .toast-enter {
+            transform: translateY(100%) scale(0.9);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .toast-show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* Centered termination toast with blurred backdrop */
+        #terminate-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #terminate-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #terminate-overlay .terminate-card {
+            transform: scale(0.85) translateY(20px);
+            opacity: 0;
+            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+        #terminate-overlay.show .terminate-card {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex items-center justify-center p-3 sm:p-4 md:p-8 relative overflow-x-hidden">
+
+    <!-- Ambient Glow Background -->
+    <div class="glow-bg-light"></div>
+
+    <!-- TOAST: Service termination notice (centered, blurred backdrop) -->
+    <div id="terminate-overlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" role="alertdialog" aria-modal="true" aria-labelledby="terminate-title" aria-describedby="terminate-desc">
+        <div class="terminate-card w-full max-w-md bg-white rounded-2xl shadow-2xl border border-rose-200 border-t-4 border-t-rose-600 p-7 text-center">
+            <div class="mx-auto mb-4 w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center pulse-danger-light">
+                <i class="fa-solid fa-circle-exclamation text-3xl"></i>
+            </div>
+            <h2 id="terminate-title" class="text-xl font-extrabold text-rose-700">Service Termination Notice</h2>
+            <p id="terminate-desc" class="text-sm text-slate-600 mt-2 leading-relaxed">
+                Service will be terminated starting <strong class="text-slate-900">October 15, 2026</strong>.<br>
+                Please renew now to avoid permanent data loss.
+            </p>
+            <button id="terminate-ok" onclick="hideTerminateToast()" class="mt-6 w-full bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-500 hover:to-red-400 active:scale-95 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <div class="w-full max-w-4xl min-w-0 relative z-10 my-4 md:my-6">
+
+        <!-- Urgent Alert Header Banner -->
+        <div class="bg-gradient-to-r from-rose-600 via-red-500 to-amber-500 rounded-t-2xl p-4 text-center shadow-md flex items-center justify-center space-x-2 text-white">
+            <span class="inline-block w-2.5 h-2.5 bg-white rounded-full animate-ping"></span>
+            <p class="font-bold text-[11px] sm:text-xs md:text-sm tracking-wide uppercase wrap-any">
+                <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Attention: Your Server Is About to Be Suspended / Terminated
+            </p>
+        </div>
+
+        <!-- Main Invoice White Card -->
+        <div class="bg-white rounded-b-2xl shadow-xl border border-slate-200/80 overflow-hidden">
+
+            <div class="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-slate-50 via-indigo-50/30 to-rose-50/30 border-b border-slate-200/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <div class="flex items-center space-x-3 sm:space-x-3.5 mb-2">
+                        <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-3 rounded-xl shadow-md text-white shrink-0">
+                            <i class="fa-solid fa-server text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg sm:text-2xl font-extrabold wrap-any text-slate-900 tracking-tight">CLOUD HOSTING SOLUTIONS</h1>
+                            <p class="text-xs text-slate-500 font-medium">Server &amp; Cloud Infrastructure Billing System</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Badge & Meta Info -->
+                <div class="flex flex-col items-start md:items-end">
+                    <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-black bg-rose-100 text-rose-700 border border-rose-300 uppercase tracking-widest pulse-danger-light mb-1.5">
+                        <i class="fa-solid fa-clock mr-1.5 text-rose-600"></i> PAST DUE / OVERDUE
+                    </span>
+                    <span class="text-xs text-slate-500 font-mono">INVOICE ID: <strong class="text-slate-800">#INV-2026-9842</strong></span>
+                    <span class="text-[11px] text-slate-400 font-medium mt-0.5">Due Date: October 15, 2026</span>
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8">
+
+                <!-- Countdown -->
+                <div class="bg-amber-50/70 rounded-2xl p-4 sm:p-5 border border-amber-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="text-center md:text-left">
+                        <h2 class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center justify-center md:justify-start">
+                            <i class="fa-solid fa-hourglass-half mr-2 text-amber-600"></i> Service Terminates In
+                        </h2>
+                        <p class="text-xs text-amber-700/80 mt-0.5">Renew immediately to prevent your server from being shut down. Service ends on October 15, 2026 at 23:59.</p>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 w-full md:w-auto md:min-w-[320px] text-center" id="countdown">
+                        <div class="bg-white border border-amber-300/80 rounded-xl py-2.5 px-1 shadow-sm">
+                            <span class="block text-xl sm:text-2xl font-extrabold text-amber-600 font-mono" id="days">00</span>
+                            <span class="text-[10px] uppercase text-slate-400 font-semibold">Days</span>
+                        </div>
+                        <div class="bg-white border border-amber-300/80 rounded-xl py-2.5 px-1 shadow-sm">
+                            <span class="block text-xl sm:text-2xl font-extrabold text-amber-600 font-mono" id="hours">00</span>
+                            <span class="text-[10px] uppercase text-slate-400 font-semibold">Hours</span>
+                        </div>
+                        <div class="bg-white border border-amber-300/80 rounded-xl py-2.5 px-1 shadow-sm">
+                            <span class="block text-xl sm:text-2xl font-extrabold text-amber-600 font-mono" id="minutes">00</span>
+                            <span class="text-[10px] uppercase text-slate-400 font-semibold">Min</span>
+                        </div>
+                        <div class="bg-white border border-amber-300/80 rounded-xl py-2.5 px-1 shadow-sm">
+                            <span class="block text-xl sm:text-2xl font-extrabold text-amber-600 font-mono" id="seconds">00</span>
+                            <span class="text-[10px] uppercase text-slate-400 font-semibold">Sec</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Details -->
+                <div>
+                    <h3 class="text-base font-bold text-slate-800 mb-3.5 flex items-center">
+                        <i class="fa-solid fa-file-invoice-dollar text-indigo-600 mr-2 text-lg"></i> Invoice Details
+                    </h3>
+
+                    <div class="rounded-xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+                        <div class="hidden md:grid grid-cols-12 gap-3 bg-slate-100/80 text-xs text-slate-600 uppercase font-bold border-b border-slate-200 px-5 py-3.5">
+                            <div class="col-span-6">Service Description &amp; Specifications</div>
+                            <div class="col-span-2 text-center">Cycle</div>
+                            <div class="col-span-2 text-center">Due Date</div>
+                            <div class="col-span-2 text-right">Amount</div>
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                        <div class="p-4 md:px-5 md:py-4 md:grid md:grid-cols-12 md:gap-3 md:items-center">
+                            <div class="md:col-span-6">
+                                <div class="font-bold text-slate-800 text-sm wrap-any">VPS Cloud Performance (Dedicated Resources)</div>
+                                <div class="text-xs text-slate-500 mt-1 wrap-any"><span class="inline-block bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono text-[11px] mr-1">srv-production-01</span>4 vCPU, 8GB RAM, 160GB NVMe SSD, Unmetered Bandwidth</div>
+                            </div>
+                            <div class="flex items-center justify-between mt-3 md:mt-0 md:col-span-2 md:justify-center">
+                                <span class="md:hidden text-[11px] uppercase font-bold text-slate-400">Cycle</span>
+                                <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200">1 Year</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 md:mt-0 md:col-span-2 md:justify-center">
+                                <span class="md:hidden text-[11px] uppercase font-bold text-slate-400">Due Date</span>
+                                <span class="text-rose-600 font-semibold text-xs">Oct 15, 2026</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 md:mt-0 md:col-span-2 md:justify-end">
+                                <span class="md:hidden text-[11px] uppercase font-bold text-slate-400">Amount</span>
+                                <span class="font-semibold text-slate-500 text-xs text-right">Included in package</span>
+                            </div>
+                        </div>
+                        <div class="p-4 md:px-5 md:py-4 md:grid md:grid-cols-12 md:gap-3 md:items-center">
+                            <div class="md:col-span-6">
+                                <div class="font-bold text-slate-800 text-sm wrap-any">Automated Daily Backup &amp; Protection</div>
+                                <div class="text-xs text-slate-500 mt-1 wrap-any">Automated Daily Offsite Cloud Backup 500GB &amp; Firewall Protection</div>
+                            </div>
+                            <div class="flex items-center justify-between mt-3 md:mt-0 md:col-span-2 md:justify-center">
+                                <span class="md:hidden text-[11px] uppercase font-bold text-slate-400">Cycle</span>
+                                <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200">1 Year</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 md:mt-0 md:col-span-2 md:justify-center">
+                                <span class="md:hidden text-[11px] uppercase font-bold text-slate-400">Due Date</span>
+                                <span class="text-rose-600 font-semibold text-xs">Oct 15, 2026</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 md:mt-0 md:col-span-2 md:justify-end">
+                                <span class="md:hidden text-[11px] uppercase font-bold text-slate-400">Amount</span>
+                                <span class="font-semibold text-slate-500 text-xs text-right">Included in package</span>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="bg-slate-50/90 border-t border-slate-200 p-4 md:px-5 md:py-4 flex items-center justify-between gap-3">
+                            <div class="text-slate-500 uppercase text-xs tracking-wider font-bold">
+                                Total Amount Due
+                                <span class="block sm:inline sm:ml-2 mt-1 sm:mt-0 w-fit bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider normal-case">SAVE $201</span>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-sm text-slate-400 line-through decoration-rose-500 decoration-2 font-semibold">$700 USD</div>
+                                <div class="text-2xl sm:text-3xl text-emerald-600 font-black leading-tight">$499 <span class="text-sm font-bold">USD</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-5 pb-3 border-b border-slate-200 gap-2">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-slate-800 flex items-center">
+                                <i class="fa-solid fa-earth-americas text-emerald-600 mr-2"></i> Official International Payment Methods
+                            </h3>
+                            <p class="text-xs text-slate-500">Pay the exact total of <strong class="text-slate-700">$499.00 USD</strong> using one of the methods below:</p>
+                        </div>
+                        <span class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full font-semibold w-fit">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> Secure Payment
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <!-- PayPal -->
+                        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition duration-200">
+                            <div class="flex items-center space-x-3 mb-2 min-w-0">
+                                <div class="shrink-0 bg-[#003087] text-white font-extrabold px-3 py-1 rounded-lg text-xs tracking-wider flex items-center space-x-1.5">
+                                    <i class="fa-brands fa-paypal"></i><span>PayPal</span>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] text-slate-400 uppercase font-semibold">PayPal (USD)</p>
+                                    <p class="text-xs font-bold text-slate-700 wrap-any">Recipient: PT KREASI SERVER INDONESIA</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg flex justify-between items-center border border-slate-200 mt-3 gap-2">
+                                <span class="font-mono text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight break-all min-w-0" id="pay-paypal">payments@ksi.com</span>
+                                <button onclick="copyToClipboard('pay-paypal', 'PayPal email')" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition flex items-center space-x-1 shadow-sm shrink-0">
+                                    <i class="fa-regular fa-copy"></i><span>Copy</span>
+                                </button>
+                            </div>
+                            <a href="https://www.paypal.com/paypalme/yourcompany/499USD" target="_blank" rel="noopener" class="mt-3 w-full inline-flex items-center justify-center space-x-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-xs font-bold py-2 rounded-lg transition shadow-sm">
+                                <i class="fa-brands fa-paypal"></i><span>Pay $499 with PayPal</span>
+                            </a>
+                        </div>
+
+                        <!-- Wise -->
+                        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition duration-200">
+                            <div class="flex items-center space-x-3 mb-2 min-w-0">
+                                <div class="shrink-0 bg-[#9fe870] text-[#163300] font-extrabold px-3 py-1 rounded-lg text-xs tracking-wider flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-paper-plane"></i><span>Wise</span>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] text-slate-400 uppercase font-semibold">Wise (USD Account)</p>
+                                    <p class="text-xs font-bold text-slate-700 wrap-any">Beneficiary: PT KREASI SERVER INDONESIA</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg flex justify-between items-center border border-slate-200 mt-3 gap-2">
+                                <div>
+                                    <span class="block text-[10px] text-slate-400 uppercase font-semibold">Account Number</span>
+                                    <span class="font-mono text-sm sm:text-base font-extrabold text-slate-900 tracking-wider" id="pay-wise">8312 4567 90</span>
+                                </div>
+                                <button onclick="copyToClipboard('pay-wise', 'Wise account')" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition flex items-center space-x-1 shadow-sm shrink-0">
+                                    <i class="fa-regular fa-copy"></i><span>Copy</span>
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-2">Routing (ABA): <span class="font-mono font-semibold text-slate-700">084009519</span> &middot; Wise US Inc.</p>
+                        </div>
+
+                        <!-- International Bank Wire (SWIFT) -->
+                        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition duration-200 md:col-span-2">
+                            <div class="flex items-center space-x-3 mb-3 min-w-0">
+                                <div class="shrink-0 bg-slate-800 text-white font-extrabold px-3 py-1 rounded-lg text-xs tracking-wider flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-building-columns"></i><span>SWIFT</span>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] text-slate-400 uppercase font-semibold">International Bank Wire Transfer (USD)</p>
+                                    <p class="text-xs font-bold text-slate-700 wrap-any">Beneficiary: PT KREASI SERVER INDONESIA</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                    <span class="block text-[10px] text-slate-400 uppercase font-semibold">Bank Name</span>
+                                    <span class="text-xs font-bold text-slate-800 wrap-any">Citibank, N.A. (New York)</span>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-lg flex justify-between items-center border border-slate-200 gap-2">
+                                    <div>
+                                        <span class="block text-[10px] text-slate-400 uppercase font-semibold">SWIFT / BIC</span>
+                                        <span class="font-mono text-sm font-extrabold text-slate-900" id="pay-swift">CITIUS33XXX</span>
+                                    </div>
+                                    <button onclick="copyToClipboard('pay-swift', 'SWIFT code')" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs px-2.5 py-1.5 rounded-md font-semibold transition shadow-sm shrink-0" aria-label="Copy SWIFT code">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-lg flex justify-between items-center border border-slate-200 gap-2">
+                                    <div>
+                                        <span class="block text-[10px] text-slate-400 uppercase font-semibold">Account Number</span>
+                                        <span class="font-mono text-sm font-extrabold text-slate-900 tracking-wide" id="pay-wire">0987 6543 2100</span>
+                                    </div>
+                                    <button onclick="copyToClipboard('pay-wire', 'Wire account')" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs px-2.5 py-1.5 rounded-md font-semibold transition shadow-sm shrink-0" aria-label="Copy account number">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-2.5"><i class="fa-solid fa-circle-info mr-1 text-indigo-500"></i> Please include <strong>#INV-2026-9842</strong> in the payment reference. Sender covers all bank/intermediary fees (OUR).</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="pt-2 space-y-3.5">
+                    <!-- WhatsApp Confirmation Button -->
+                    <a href="https://wa.me/15550100199?text=Hello%20Admin,%20I%20have%20completed%20the%20payment%20(USD%20499)%20for%20the%20server%20renewal%20Invoice%20%23INV-2026-9842.%20Please%20process%20it."
+                       target="_blank" rel="noopener"
+                       class="relative overflow-hidden w-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3.5 px-4 sm:px-6 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2.5 text-sm sm:text-base group">
+                        <div class="absolute inset-0 shimmer-light"></div>
+                        <i class="fa-brands fa-whatsapp text-xl group-hover:scale-110 transition-transform"></i>
+                        <span>Confirm Payment via WhatsApp</span>
+                    </a>
+
+                    <p class="text-center text-xs text-slate-500">
+                        <i class="fa-brands fa-whatsapp text-emerald-600 mr-1"></i> WhatsApp (US): <a id="wa-display" href="tel:+15550100199" class="font-semibold text-slate-700 hover:underline">+1 (555) 010-0199</a>
+                    </p>
+
+                    <div class="text-center">
+                        <p class="text-xs text-slate-500">
+                            Need technical help or a tax invoice?
+                            <a href="mailto:billing@domain.com" class="text-indigo-600 font-semibold hover:underline">Contact Billing Support</a>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bg-slate-100/80 px-6 py-4 border-t border-slate-200 text-center text-xs text-slate-500">
+                <p>&copy; 2026 Cloud Hosting Solutions. All rights reserved.</p>
+                <p class="mt-0.5 text-[11px] text-slate-400">This official invoice was generated automatically by the server management system.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TOAST: Copy confirmation -->
+    <div id="toast" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm bg-white border border-emerald-300 text-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 toast-enter pointer-events-none z-50">
+        <div class="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
+            <i class="fa-solid fa-circle-check text-lg"></i>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-slate-900" id="toast-title">Copied!</p>
+            <p class="text-[11px] text-slate-500 wrap-any" id="toast-msg">Details copied to clipboard.</p>
+        </div>
+    </div>
+
+    <script>
+        // ---------- Copy to Clipboard ----------
+        function copyToClipboard(elementId, label) {
+            const textToCopy = document.getElementById(elementId).innerText.trim();
+            const value = textToCopy.includes('@') ? textToCopy : textToCopy.replace(/\s+/g, '');
+
+            const done = () => showToast(label + ' copied!', '"' + textToCopy + '" is ready to paste.');
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(value).then(done).catch(() => fallbackCopy(value, done));
+            } else {
+                fallbackCopy(value, done);
+            }
+        }
+
+        function fallbackCopy(value, cb) {
+            const tempInput = document.createElement('input');
+            tempInput.value = value;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            cb();
+        }
+
+        let copyToastTimer;
+        function showToast(title, message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = message;
+
+            toast.classList.remove('toast-enter');
+            toast.classList.add('toast-show');
+
+            clearTimeout(copyToastTimer);
+            copyToastTimer = setTimeout(() => {
+                toast.classList.remove('toast-show');
+                toast.classList.add('toast-enter');
+            }, 3000);
+        }
+
+        // ---------- Service Termination Toast ----------
+        function showTerminateToast() {
+            const o = document.getElementById('terminate-overlay');
+            o.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('terminate-ok').focus(), 300);
+        }
+        function hideTerminateToast() {
+            document.getElementById('terminate-overlay').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                if (document.getElementById('terminate-overlay').classList.contains('show')) hideTerminateToast();
+            }
+        });
+
+        // ---------- Blank page after due date ----------
+        function goBlank() {
+            document.documentElement.classList.add('expired');
+            document.title = '';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ---------- Live Countdown to Oct 15, 2026 23:59 (local time) ----------
+        function startCountdown() {
+            const target = window.EXPIRY_TIME; // Oct 15, 2026 23:59:00 (viewer's local time)
+            const pad = n => String(n).padStart(2, '0');
+            const el = id => document.getElementById(id);
+
+            function tick() {
+                if (Date.now() >= target) { goBlank(); return; }
+                let diff = Math.max(0, target - Date.now());
+                const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+                const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
+                const m = Math.floor(diff / 60000);    diff -= m * 60000;
+                const s = Math.floor(diff / 1000);
+
+                el('days').innerText = pad(d);
+                el('hours').innerText = pad(h);
+                el('minutes').innerText = pad(m);
+                el('seconds').innerText = pad(s);
+            }
+            tick();
+            const timerId = setInterval(function () {
+                tick();
+                if (Date.now() >= target) clearInterval(timerId);
+            }, 1000);
+        }
+
+        // ---------- Contact number (US) - edit ONLY this line ----------
+        const WA_NUMBER_US = '15550100199'; // format: 1 + 10-digit US number, no "+" or spaces
+
+        function applyContactNumber() {
+            const n = WA_NUMBER_US;
+            const pretty = '+1 (' + n.slice(1, 4) + ') ' + n.slice(4, 7) + '-' + n.slice(7);
+            const btn = document.querySelector('a[href^="https://wa.me/"]');
+            if (btn) btn.href = btn.href.replace(/wa\.me\/\d+/, 'wa.me/' + n);
+            const d = document.getElementById('wa-display');
+            if (d) { d.textContent = pretty; d.href = 'tel:+' + n; }
+        }
+
+        window.addEventListener('load', function () {
+            applyContactNumber();
+            if (Date.now() >= window.EXPIRY_TIME) { goBlank(); return; }
+            startCountdown();
+            setTimeout(showTerminateToast, 600);
+        });
+    </script>
+</body>
+</html>
